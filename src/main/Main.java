@@ -1,10 +1,10 @@
 package main;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 import clases.*;
 import exceptions.IncorrectEmailFormatException;
@@ -24,11 +24,11 @@ public class Main {
 				break;
 
 			case 2:
-
+				inactiveTrabajador(empr);
 				break;
 
 			case 3:
-
+				removeAlumnas(empr);
 				break;
 
 			case 4:
@@ -75,10 +75,10 @@ public class Main {
 				System.out.println("¿Quiere añadir mas datos para la empresa? (S/N)");
 				choice=Utilidades.leerChar('S','N');
 				if (choice=='N') {
-					Empresa eI=new Empresa(cif, name, new HashMap<String, Agente>());
+					Empresa eI=new Empresa(cif, name, new HashMap <String, Agente>());
 					writeEmpr(eI,empr);
 				} else {
-					Empresa eI=new Empresa(cif, name, new HashMap<String, Agente>());
+					Empresa eI=new Empresa(cif, name, new HashMap <String, Agente>());
 					do {
 						menu=emprMenu();
 						switch (menu) {
@@ -129,8 +129,10 @@ public class Main {
 	}
 
 	public static void addAgent(Empresa eI, String emprName) {
-		String dni, name, email, activity;
-		boolean found=false, error=false, active;
+		Tipo setType;
+		LocalDate birthDate;
+		String dni, name, email=null, activity=null;
+		boolean found=false, error=false;
 		char choice, type;
 
 		System.out.println("Introduce el DNI:");
@@ -140,7 +142,6 @@ public class Main {
 				found=true;
 			}
 		}
-
 		if (found) {
 			System.out.println("Ya existe un agente con el DNI introducido.");
 		} else {
@@ -165,15 +166,24 @@ public class Main {
 			case 'T':
 				System.out.println("¿Es de tipo Contacto o Tutor? (C/T)");
 				type=Utilidades.leerChar('C','T');
+				if (type=='C') {
+					setType=Tipo.CONTACTO;
+				} else {
+					setType=Tipo.TUTOR;
+				}
+				eI.getA().put(dni, new Trabajador(emprName, dni, name, email, activity, setType));
 				break;
 
 			case 'A':
-
+				System.out.println("El periodo es automaticamente generado.");
+				System.out.println("Introduce la fecha de nacimiento: (DD/MM/AAAA)");
+				birthDate=Utilidades.leerFechaDMA();
+				eI.getA().put(dni, new Alumna(activity, dni, name, email, birthDate));
 				break;
 			}
 		}
 	}
-	
+
 	public static void writeEmpr(Empresa eI, ArrayList<Empresa> em) {
 		ObjectOutputStream oos;
 		MyObjectOutputStream moos;
@@ -211,5 +221,75 @@ public class Main {
 		}
 	}
 
+	public static void inactiveTrabajador(ArrayList <Empresa> empr) {
+		String cif, dni;
+		boolean found=false, inactive=false, incorrect=true;
 
+		System.out.println("Introduce el CIF de una empresa:");
+		cif=Utilidades.introducirCadena();
+
+		for (int i=0;i<empr.size()&&!found;i++) {
+			if (empr.get(i).getCif().equals(cif)) {
+				found=true;
+				System.out.println("Introduzca el DNI del trabajador que se quiera dar la baja:");
+				dni=Utilidades.introducirCadena();
+				for (Agente a:empr.get(i).getA().values()) {
+					if (a.getDni().equals(dni) && a instanceof Trabajador) {
+						incorrect=false;
+						if (!((Trabajador)a).isActive()) {
+							System.out.println("El trabajador ya esta de baja.");
+						} else {
+							inactive=true;
+							((Trabajador)a).setActive(false);
+						}
+					}
+				}
+			}
+		}
+
+		if (!found) {
+			System.out.println("La empresa no se ha podido encontrar.");
+		} else if (!inactive) {
+			System.out.println("El trabajador no ha sido encontrado.");
+		} else if (!inactive && incorrect) {
+			System.out.println("El DNI introducido no corresponde al de un trabajador.");
+		}
+	}
+	
+	public static void removeAlumnas(ArrayList <Empresa> empr) {
+		String period;
+		boolean found=false;
+		char deletThis;
+		
+		System.out.println("Introduce el curso academico:");
+		period=Utilidades.introducirCadena();
+		
+		for (int i=0;i<empr.size();i++) {
+			for (Agente a:empr.get(i).getA().values()) {
+				if (((Alumna)a).getPeriod().equals(period)) {
+					found=true;
+					System.out.println("Listado de alumnos:");
+					for (Agente aShow:empr.get(i).getA().values()) {
+						System.out.println(aShow.toString());
+					}
+					System.out.println("¿Esta seguro de que quieras eliminar estos alumnos?");
+					deletThis=Utilidades.leerChar('S','N');
+					if (deletThis=='S') {
+						empr.get(i).getA().clear();
+					}
+					if (empr.get(i).getA().isEmpty()) {
+						empr.remove(i);
+					}
+				}
+			}
+		}
+		
+		if (!found) {
+			System.out.println("No se ha encontrado ningun alumno para eliminar.");
+		}
+	}
+	
+	public static void statEmpr(ArrayList <Empresa> empr) {
+		
+	}
 }

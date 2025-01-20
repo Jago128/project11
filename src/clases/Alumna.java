@@ -8,7 +8,7 @@ public class Alumna extends Agente {
 	private String period;
 	private String group;
 	
-	public Alumna(String code, String dni, String name, String email, LocalDate birthDate, String group) {
+	public Alumna(String code, String dni, String name, String email, LocalDate birthDate) {
 		super(code, dni, name, email);
 		this.birthDate = birthDate;
 		this.group = generatePeriod();

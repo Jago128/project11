@@ -3,12 +3,13 @@ package clases;
 public class Trabajador extends Agente {
 	private String post;
 	private Tipo type;
-	private static boolean active=true;
+	private boolean active;
 	
 	public Trabajador(String code, String dni, String name, String email, String post, Tipo type) {
 		super(code, dni, name, email);
 		this.post = post;
 		this.type = type;
+		this.active=true;
 	}
 
 	public String getPost() {
@@ -27,12 +28,12 @@ public class Trabajador extends Agente {
 		this.type = type;
 	}
 
-	public static boolean isActive() {
+	public boolean isActive() {
 		return active;
 	}
 
-	public static void setActive(boolean active) {
-		Trabajador.active = active;
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
 	@Override
