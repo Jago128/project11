@@ -255,15 +255,15 @@ public class Main {
 			System.out.println("El DNI introducido no corresponde al de un trabajador.");
 		}
 	}
-	
+
 	public static void removeAlumnas(ArrayList <Empresa> empr) {
 		String period;
 		boolean found=false;
 		char deletThis;
-		
+
 		System.out.println("Introduce el curso academico:");
 		period=Utilidades.introducirCadena();
-		
+
 		for (int i=0;i<empr.size();i++) {
 			for (Agente a:empr.get(i).getA().values()) {
 				if (((Alumna)a).getPeriod().equals(period)) {
@@ -283,13 +283,32 @@ public class Main {
 				}
 			}
 		}
-		
+
 		if (!found) {
 			System.out.println("No se ha encontrado ningun alumno para eliminar.");
 		}
 	}
-	
+
+	public static void updateFile(ArrayList <Empresa> em) {
+		ObjectOutputStream oos;
+		File empr=new File("empresas.dat");
+		if (empr.exists()) {
+			try {
+				oos=new MyObjectOutputStream(new FileOutputStream(empr));
+				for (int i=0;i<em.size();i++) {
+					oos.writeObject(em.get(i));
+				}
+				oos.close();
+				System.out.println("La empresa se ha añadido al fichero.");
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	public static void statEmpr(ArrayList <Empresa> empr) {
-		
+
 	}
 }
