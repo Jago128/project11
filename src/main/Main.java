@@ -13,26 +13,26 @@ import utilidades.*;
 public class Main {
 
 	public static void main(String[] args) {
-		int menu=menu();
-
 		ArrayList <Empresa> empr=new ArrayList<Empresa>();
+		int menu=menu();
+		File em=new File("empresas.dat");
 
 		do {
 			switch (menu) {
 			case 1:
-				addEmpr(empr);
+				addEmpr(empr,em);
 				break;
 
 			case 2:
-				inactiveTrabajador(empr);
+				inactiveTrabajador(empr,em);
 				break;
 
 			case 3:
-				removeAlumnas(empr);
+				removeAlumnas(empr,em);
 				break;
 
 			case 4:
-
+				statEmpr(empr,em);
 				break;
 
 			case 5:
@@ -51,7 +51,7 @@ public class Main {
 		return Utilidades.leerInt(1,5);
 	}
 
-	public static void addEmpr(ArrayList<Empresa> empr) {
+	public static void addEmpr(ArrayList<Empresa> empr, File em) {
 		String cif, name;
 		char choice, addMore;
 		int menu;
@@ -76,7 +76,7 @@ public class Main {
 				choice=Utilidades.leerChar('S','N');
 				if (choice=='N') {
 					Empresa eI=new Empresa(cif, name, new HashMap <String, Agente>());
-					writeEmpr(eI,empr);
+					writeEmpr(eI,empr,em);
 				} else {
 					Empresa eI=new Empresa(cif, name, new HashMap <String, Agente>());
 					do {
@@ -98,11 +98,11 @@ public class Main {
 							break;
 
 						case 4:
-							addAgent(eI,name);
+							addAgent(eI,name,em);
 							break;
 
 						case 5:
-							writeEmpr(eI,empr);
+							writeEmpr(eI,empr,em);
 						}
 					} while (menu!=5);
 				}
@@ -128,12 +128,12 @@ public class Main {
 		return Utilidades.leerInt("Introduce la opcion:",1,5);
 	}
 
-	public static void addAgent(Empresa eI, String emprName) {
-		Tipo setType;
+	public static void addAgent(Empresa eI, String emprName, File em) {
+		Tipo setType=null;
 		LocalDate birthDate;
-		String dni, name, email=null, activity=null;
-		boolean found=false, error=false;
-		char choice, type;
+		String dni, name, email=null, activity=null, type;
+		boolean found=false, error=false, typeError=false;
+		char choice;
 
 		System.out.println("Introduce el DNI:");
 		dni=Utilidades.introducirCadena();
@@ -146,6 +146,7 @@ public class Main {
 			System.out.println("Ya existe un agente con el DNI introducido.");
 		} else {
 			System.out.println("El codigo es automaticamente generado.\n");
+
 			System.out.println("Introduce el nombre:");
 			name=Utilidades.introducirCadena();
 			do {
@@ -164,30 +165,41 @@ public class Main {
 
 			switch (choice) {
 			case 'T':
-				System.out.println("¿Es de tipo Contacto o Tutor? (C/T)");
-				type=Utilidades.leerChar('C','T');
-				if (type=='C') {
-					setType=Tipo.CONTACTO;
-				} else {
-					setType=Tipo.TUTOR;
-				}
-				eI.getA().put(dni, new Trabajador(emprName, dni, name, email, activity, setType));
+				do {
+					typeError=false;
+					try {
+						System.out.println("¿Es de tipo Contacto o Tutor? (C/T)");
+						type=Utilidades.introducirCadena();
+						setType=Tipo.valueOf(type);
+					} catch (IllegalArgumentException e) {
+						typeError=true;
+						System.out.println("El tipo introducido es invalido.");
+					}
+				} while (typeError);
+				eI.getA().put(dni, new Trabajador(generateCode(emprName,em), dni, name, email, activity, setType));
 				break;
 
 			case 'A':
 				System.out.println("El periodo es automaticamente generado.");
 				System.out.println("Introduce la fecha de nacimiento: (DD/MM/AAAA)");
 				birthDate=Utilidades.leerFechaDMA();
-				eI.getA().put(dni, new Alumna(activity, dni, name, email, birthDate));
+				eI.getA().put(dni, new Alumna(generateCode(emprName,em), dni, name, email, birthDate));
 				break;
 			}
 		}
 	}
 
-	public static void writeEmpr(Empresa eI, ArrayList<Empresa> em) {
+	public static String generateCode(String emprName, File em) {
+		for (int i=0;i<Utilidades.calculoFichero(em);i++) {
+			Agente.setCode++;
+		}
+
+		return emprName.substring(0,5)+"-"+Agente.setCode;
+	}
+
+	public static void writeEmpr(Empresa eI, ArrayList<Empresa> em, File empr) {
 		ObjectOutputStream oos;
 		MyObjectOutputStream moos;
-		File empr=new File("empresas.dat");
 		if (empr.exists()) {
 			try {
 				moos=new MyObjectOutputStream(new FileOutputStream(empr,true));
@@ -214,14 +226,14 @@ public class Main {
 		em.add(eI);
 	}
 	public static void validateEmail(String email) throws IncorrectEmailFormatException {
-		Pattern modelo = Pattern.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"+ "[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{3,})$");
-		Matcher matcher = modelo.matcher(email);
+		Pattern modelo=Pattern.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"+ "[A-Za-z0-9-]+(\\\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{3,})$");
+		Matcher matcher=modelo.matcher(email);
 		if (!matcher.matches()) {
 			throw new IncorrectEmailFormatException("Error: El email es invalido!");
 		}
 	}
 
-	public static void inactiveTrabajador(ArrayList <Empresa> empr) {
+	public static void inactiveTrabajador(ArrayList <Empresa> empr, File em) {
 		String cif, dni;
 		boolean found=false, inactive=false, incorrect=true;
 
@@ -241,6 +253,7 @@ public class Main {
 						} else {
 							inactive=true;
 							((Trabajador)a).setActive(false);
+							updateFile(empr,em);
 						}
 					}
 				}
@@ -256,7 +269,7 @@ public class Main {
 		}
 	}
 
-	public static void removeAlumnas(ArrayList <Empresa> empr) {
+	public static void removeAlumnas(ArrayList <Empresa> empr, File em) {
 		String period;
 		boolean found=false;
 		char deletThis;
@@ -283,23 +296,24 @@ public class Main {
 				}
 			}
 		}
-
+		
 		if (!found) {
 			System.out.println("No se ha encontrado ningun alumno para eliminar.");
+		} else {
+			updateFile(empr,em);
 		}
 	}
 
-	public static void updateFile(ArrayList <Empresa> em) {
+	public static void updateFile(ArrayList <Empresa> empr, File em) {
 		ObjectOutputStream oos;
-		File empr=new File("empresas.dat");
-		if (empr.exists()) {
+		if (em.exists()) {
 			try {
-				oos=new MyObjectOutputStream(new FileOutputStream(empr));
-				for (int i=0;i<em.size();i++) {
-					oos.writeObject(em.get(i));
+				oos=new MyObjectOutputStream(new FileOutputStream(em));
+				for (int i=0;i<empr.size();i++) {
+					oos.writeObject(empr.get(i));
 				}
 				oos.close();
-				System.out.println("La empresa se ha añadido al fichero.");
+				System.out.println("Las empresas se han actualizado.");
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
@@ -308,7 +322,7 @@ public class Main {
 		}
 	}
 
-	public static void statEmpr(ArrayList <Empresa> empr) {
-
+	public static void statEmpr(ArrayList <Empresa> empr, File em) {
+		
 	}
 }

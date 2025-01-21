@@ -6,8 +6,10 @@ public class Agente {
 	protected String name;
 	protected String email;
 	
+	public static int setCode=1;
+	
 	public Agente(String code, String dni, String name, String email) {
-		this.code = code;
+		this.code = code+setCode;
 		this.dni = dni;
 		this.name = name;
 		this.email = email;
