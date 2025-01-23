@@ -49,6 +49,6 @@ public class Agente {
 
 	@Override
 	public String toString() {
-		return "Agente [code=" + code + ", dni=" + dni + ", name=" + name + ", email=" + email + "]";
+		return "Agente [Codigo: "+code+", DNI: "+dni+", Nombre: "+name+", Email: "+email+"]";
 	}
 }
