@@ -3,6 +3,7 @@ package main;
 import java.io.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.regex.*;
 
@@ -296,7 +297,7 @@ public class Main {
 				}
 			}
 		}
-		
+
 		if (!found) {
 			System.out.println("No se ha encontrado ningun alumno para eliminar.");
 		} else {
@@ -323,6 +324,75 @@ public class Main {
 	}
 
 	public static void statEmpr(ArrayList <Empresa> empr, File em) {
-		
+		ObjectInputStream ois = null;
+		Empresa empresa;
+		ArrayList<EmpresaValoracion> valoraciones = new ArrayList<>();
+		boolean continuar = true, existe = false, encontrada = false;;
+		int tutores, alumnas;
+		String curso = LocalDate.now().getYear() + "-" + (LocalDate.now().getYear() + 1);
+		double mediaTutores, mediaAlumnas;
+
+		try {
+			ois = new ObjectInputStream(new FileInputStream(em));
+			while (continuar) {
+				try {
+					empresa = (Empresa) ois.readObject();
+					tutores = 0;
+					alumnas = 0;
+					existe = false;
+					encontrada = false;
+
+					for (Agente agente : empresa.getA().values()) {
+						if (agente instanceof Trabajador && ((Trabajador) agente).getType() == Tipo.TUTOR && ((Trabajador) agente).isActive()) {
+							tutores++;								
+						} else {
+							if (((Alumna) agente).getGroup().equals(curso)) {
+								alumnas++;
+								existe = true;
+							}
+						}
+					}
+
+					if (existe) {
+						for (EmpresaValoracion valoracion : valoraciones) {
+							if (valoracion.getValoracion() == empresa.getValoration()) {
+								valoracion.setEmpresas(valoracion.getEmpresas() + 1);
+								valoracion.setTutores(valoracion.getTutores() + tutores);
+								valoracion.setAlumnas(valoracion.getAlumnas() + alumnas);
+								encontrada = true;
+								break;
+							}
+						}
+						if (!encontrada) {
+							valoraciones.add(new EmpresaValoracion(empresa.getValoration(), 1, tutores, alumnas));
+						}
+					}
+				} catch (EOFException eof) {
+					continuar = false;
+				} catch (ClassNotFoundException cnf) {
+					cnf.printStackTrace();
+				}
+			}
+		} catch (IOException e) {
+			System.out.println("Error al procesar los archivos: " + e.getMessage());
+		} finally {
+			try {
+				 ois.close();
+			} catch (IOException e) {
+				System.out.println("Error al cerrar el archivo: " + e.getMessage());
+			}
+		}
+
+		if (valoraciones.isEmpty()) {
+			System.out.println("No se han encontrado empresas con alumnaspara el curso " + curso);
+		} else {
+			valoraciones.sort(Comparator.comparing(EmpresaValoracion::getEmpresas).reversed());
+			System.out.printf("%-25s %-25s %-25s %-25s\n", "VALORACIÓN", "Nº EMPRESAS", "MEDIA DE TUTORES", "MEDIA DE ALUMNAS");
+			for (EmpresaValoracion valoracion : valoraciones) {
+				mediaTutores = (double) valoracion.getTutores() / valoracion.getEmpresas();
+				mediaAlumnas = (double) valoracion.getAlumnas() / valoracion.getEmpresas();
+				System.out.printf("%-25d %-25d %-25.2f %-25.2f\n", valoracion.getValoracion(), valoracion.getEmpresas(), mediaTutores, mediaAlumnas);
+			}
+		}
 	}
 }
